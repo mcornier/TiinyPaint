@@ -39,12 +39,34 @@ Recorded on 2026-11-07 on a Tiiny z01, TiinyOS 0.1.39, over USB. The gateway has
 }
 ```
 
+- `completed` carries `usage.details`: token counts (`text_tokens`, `latent_tokens`, and with references `image_input_latent_tokens` and `image_input_vision_tokens`), `patch` and `vae_stride`. There are no per-component timings.
 - `size` is **ignored** on this route (renders at 1024×1024): use `width` and `height`.
 - SSE response: `start`, `preview`, `completed`, `end` or `error`. `preview` and `completed` carry an RGBA PNG as a data URI.
 - `/v1/images/edits` does not exist: editing goes through `image` or `images` (10 at most).
 - `GET /v1/image/status` describes the runtime: one render at a time, schedulers `euler`, `euler_ancestral_rf`, `unipc_flow`.
 - Sizes: multiples of 32, and `ceil_to_32((w/16) × (h/16)) ≤ 16896`, or about 4.3 MP.
 - **Stopping**: there is no cancel route, but closing the connection is enough. The NPU dropped back to 0% within a few seconds and the next render started normally.
+
+### What the stream shows of the components
+
+The model card lists a `processor`, `text_encoder`, `transformer`, `vae` and `scheduler`. The Tiiny exposes them as one model, and every preview we saw carries `"stage": "transformer"`. No event marks the text encoder or the VAE. `/v1/image/status` also reports `supports_component_residency: true`, which is undocumented.
+
+Reference images appear to take two paths: `image_input_vision_tokens` suggests the text encoder reads them, and `image_input_latent_tokens` suggests the VAE encodes them.
+
+The first preview therefore marks the end of encoding. The app always requests step 1 when previews are on, and does not display that image. With previews off there is no signal, so the switch from encoding to the step loop in the graph uses an estimate.
+
+### Time before the first step and per step
+
+8 steps, seed 42, model already loaded, previews at steps 1 and 8 unless noted:
+
+| Size | Before step 1 ends | Per step | Total |
+|---|---|---|---|
+| 512×512 | 4.9 s | 0.68 s | 9.1 s |
+| 640×416 (two runs) | 7.4 s | 3.0 s | 28 s |
+| 416×640 | 7.5 s | 3.0 s | 27.9 s |
+| 512×512 with one reference, every step previewed | 18.4 s | about 1.5 s | 28.3 s |
+
+The non-square sizes have about the same pixel count as 512×512 but were about 4 times slower per step. The cause is unknown, and other sizes were not measured.
 
 ### Measured parameters
 
@@ -82,7 +104,7 @@ Stopping at 50% because of a pose defect is therefore **not possible** with this
 
 - Linear: `"scheduler": {"type": "euler", "params": {"use_dynamic_shifting": false, "shift": 1.0}}`. In our single test, the final pose at 40 steps was the same.
 - At 8 steps, this schedule gives a **blurry, ghosted** image. The app therefore only applies it from 30 steps, and the option is off by default. Its quality still needs evaluating on more cases.
-- Rejected after testing: client-side low-pass blur, extrapolating the final image from two previews, removing the alpha channel, fast 8- or 12-step drafts (the pose differs from the 40-step render).
+- Rejected after testing as a way to judge a render early: client-side low-pass blur, extrapolating the final image from two previews, removing the alpha channel, fast 8- or 12-step drafts (the pose differs from the 40-step render).
 - A real solution would need Tiiny to provide a preview of the x0 estimate.
 
 ## Localized diffusion

@@ -88,16 +88,10 @@ class SessionHistory {
     await idbDone(tx);
   }
 
-  async clear() {
+  async remove(id) {
     await this._open();
     const tx = this.db.transaction('history', 'readwrite');
-    const store = tx.objectStore('history');
-    store.index('session').openKeyCursor(IDBKeyRange.only(this.id)).onsuccess = (event) => {
-      const cursor = event.target.result;
-      if (!cursor) return;
-      store.delete(cursor.primaryKey);
-      cursor.continue();
-    };
+    tx.objectStore('history').delete(id);
     await idbDone(tx);
   }
 }
