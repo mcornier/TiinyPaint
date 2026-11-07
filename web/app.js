@@ -3,6 +3,7 @@
 const $ = (id) => document.getElementById(id);
 
 const STORAGE_KEY = 'tiinypaint.settings';
+const DEFAULT_IMAGE_MODEL = 'Qwen/Qwen-Image-2.1';
 const PE_I2I = 'Qwen/Qwen-Image-2.1-PE-I2I';
 const PE_T2I = 'Qwen/Qwen-Image-2.1-PE-T2I';
 const MAX_IMAGES = 10;
@@ -36,6 +37,7 @@ const state = {
 };
 
 let editor = null;
+let sessionHistory = null;
 
 /* ---------- Réglages persistés (clé API comprise, dans ce navigateur seulement) ---------- */
 
@@ -55,7 +57,8 @@ function saveSettings() {
   s.randomSeed = $('randomSeed').checked;
   s.linearSchedule = $('earlyPreview').checked;
   s.previewEvery = state.previewEvery;
-  s.imageModel = $('imageModel').value || s.imageModel;
+  // Ancienne clé : elle mémorisait aussi le choix automatique, pas seulement celui de l'utilisateur.
+  delete s.imageModel;
   s.enhancer = $('enhancer').value || s.enhancer;
   s.language = currentLang;
   try {
@@ -152,11 +155,15 @@ function fillSelect(select, items, wanted) {
 }
 
 function renderModelSelects() {
-  const images = state.models.filter(isImageModel).sort((a, b) => {
-    const score = (m) => (state.running.includes(m.id) ? 0 : 2) + (m.id.includes('Qwen-Image') ? 0 : 1);
-    return score(a) - score(b);
-  });
-  const wantedImage = $('imageModel').value || state.settings.imageModel;
+  // Le premier de la liste est le défaut : le modèle officiel, jamais une variante non censurée
+  // si un autre modèle est disponible, même si celle-ci est déjà chargée.
+  const score = (m) => {
+    if (m.id === DEFAULT_IMAGE_MODEL) return 0;
+    if (/uncensored/i.test(m.id)) return 3;
+    return state.running.includes(m.id) ? 1 : 2;
+  };
+  const images = state.models.filter(isImageModel).sort((a, b) => score(a) - score(b));
+  const wantedImage = $('imageModel').value || state.settings.imageModelChoice;
   fillSelect($('imageModel'), images.map((m) => [m.id, m.display_name]), wantedImage);
 
   const enhancers = state.models.filter((m) => isChatModel(m) && !isPromptEnhancer(m));
@@ -815,10 +822,50 @@ function addToHistory(blob, body, elapsed) {
     negative: body.negative_prompt || '',
     model: body.model,
     elapsed,
+    createdAt: Date.now(),
   };
   state.history.unshift(item);
   selectHistory(item.id);
   renderSourceOptions();
+  const { url, ...record } = item;
+  sessionHistory?.add(record).catch(warnHistoryNotSaved);
+}
+
+function warnHistoryNotSaved() {
+  setStatus(t('historyNotSaved'), { error: true });
+}
+
+async function restoreSessionHistory() {
+  try {
+    sessionHistory = new SessionHistory();
+    const items = await sessionHistory.load();
+    state.history = items.map((item) => ({ ...item, url: URL.createObjectURL(item.blob) }));
+  } catch {
+    sessionHistory = null;
+    return;
+  }
+  if (state.history.length) {
+    selectHistory(state.history[0].id);
+    renderSourceOptions();
+  }
+}
+
+async function clearHistory() {
+  if (!window.confirm(t('confirmClearHistory', { n: state.history.length }))) return;
+  for (const item of state.history) URL.revokeObjectURL(item.url);
+  state.history = [];
+  state.currentId = null;
+  $('output').hidden = true;
+  $('output').removeAttribute('src');
+  $('placeholder').hidden = false;
+  updateDownload();
+  renderHistory();
+  renderSourceOptions();
+  try {
+    await sessionHistory?.clear();
+  } catch {
+    warnHistoryNotSaved();
+  }
 }
 
 function selectHistory(id) {
@@ -845,6 +892,7 @@ function updateDownload() {
   }
   $('editBtn').disabled = !enabled || state.busy || state.editing;
   $('useAsRefBtn').disabled = !enabled || state.busy;
+  $('clearHistoryBtn').disabled = !state.history.length || state.busy || state.editing;
 }
 
 function restoreHistoryParams(item) {
@@ -1123,6 +1171,7 @@ function bindEvents() {
     const item = state.history.find((h) => h.id === state.currentId);
     if (item) openEditor(await loadImage(item.url));
   });
+  $('clearHistoryBtn').addEventListener('click', clearHistory);
   $('useAsRefBtn').addEventListener('click', async () => {
     const item = state.history.find((h) => h.id === state.currentId);
     if (item) await addRefs([item.blob]);
@@ -1148,6 +1197,8 @@ function bindEvents() {
     const model = modelById($('imageModel').value);
     if (model?.steps) $('steps').value = model.steps;
     if (model?.guidance_scale) $('guidance').value = model.guidance_scale;
+    state.settings.imageModelChoice = $('imageModel').value;
+    saveSettings();
     updateMode();
   });
   $('randomSeed').addEventListener('change', saveSettings);
@@ -1193,6 +1244,7 @@ async function start() {
   refreshPreviewControls();
   setStatus(t('ready'));
   setConnection(false, t('notConnected'));
+  await restoreSessionHistory();
   if (state.settings.baseUrl && state.settings.apiKey) {
     try {
       await connect(state.settings.baseUrl, state.settings.apiKey);

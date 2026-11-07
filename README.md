@@ -14,6 +14,7 @@ The Tiiny must be unlocked: after a restart, the API returns 502 until TiinyOS h
 - **Prompt enhancement**: PE-I2I with images, PE-T2I without images, or any installed LLM. The model's reasoning is shown live.
 - **Settings**: aspect ratio, resolution, steps, CFG, seed, scheduler, negative prompt, temperature, top P, top K.
 - **Preview during diffusion**: Off, 1/8, 1/4, 1/2, 1. The Stop button really does stop the computation on the Tiiny.
+- **Session history**: renders survive a page reload, and a button clears them. They are deleted the next time TiinyPaint opens after the tab was closed. Download the images you want to keep.
 - **Models**: load and unload, with a check against the NPU's actual memory.
 - **Editor**: mask brush, eraser, lasso, rectangle, invert; restore from another image; clone stamp; crop; canvas extension; rotate and flip; undo; zoom.
 - **Localized diffusion**: only the masked area is generated, and pixels outside it stay identical.
@@ -25,13 +26,12 @@ The Tiiny must be unlocked: after a restart, the API returns 502 until TiinyOS h
 |---|---|
 | `web/api.js` | Tiiny API client (models, image stream, chat stream) |
 | `web/app.js` | Interface and workflows |
+| `web/session.js` | Session history storage (IndexedDB) |
 | `web/editor.js` | Canvas editor and localized diffusion preparation |
 | `web/i18n.js` | Translations |
 | `web/prompts.js` | Official PE-I2I and PE-T2I system prompts |
 | `docs/API_TIINY.md` | What we learned about the API, with measurements |
 | `docs/DISTRIBUTION.md` | Tiiny store, App Farm, on-device or desktop app |
-
-Known POC limitation: the history is not kept when the page reloads.
 
 ## License
 

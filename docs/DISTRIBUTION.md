@@ -52,8 +52,7 @@ Tiiny Studio is itself a community Tauri app (`io.github.thezolon.tiinystudio`),
 ## To settle before any public release
 
 1. **Licenses**: Qwen-Image 2.1, PE-I2I and PE-T2I are under the [Qwen research license](../licenses/QWEN_RESEARCH_LICENSE.txt): non-commercial use only, unless separately agreed. Redistribution is allowed with the license and a `Notice` statement, both provided in this repo for `web/prompts.js`. A paid version would need that agreement. Downloading the prompts at first launch would avoid redistributing them, but would not lift the usage limit on the models.
-2. **Default model**: the app picks the model that is already loaded, which may be a community model. For a public version, the default should be the official model, with the choice left to the user.
-3. **Addresses**: the Tiiny address is entered by hand. Discovery would be better (`:39218/device.json`, or the `api.tiiny` names).
+2. **Addresses**: the Tiiny address is entered by hand. Discovery would be better (`:39218/device.json`, or the `api.tiiny` names).
 
 ## Questions for Tiiny
 
