@@ -1,63 +1,63 @@
-# Distribuer TiinyPaint
+# Distributing TiinyPaint
 
-État au 2026-11-07. Ce qui suit vient de la documentation publique, de l'API de l'appareil et de TiinyOS 0.1.39. Rien n'a été installé sur le Tiiny.
+As of 2026-11-07. This comes from the public documentation, the device API and TiinyOS 0.1.39. Nothing was installed on the Tiiny.
 
-## Recommandation
+## Recommendation
 
-**Garder la page web comme produit unique, et la publier d'abord sur l'App Farm communautaire avec un petit lanceur.** Écrire à Tiiny en parallèle pour l'accès au store officiel, et n'envelopper dans une app desktop qu'en cas de besoin réel.
+**Keep the web page as the single product, and publish it first on the community App Farm with a small launcher.** Write to Tiiny in parallel about access to the official store, and only wrap it in a desktop app if there is a real need.
 
-Tout le calcul lourd est déjà sur le NPU, et tout le reste dans le navigateur. Héberger la page sur le Tiiny ne ferait que servir des fichiers statiques.
+All the heavy computation already runs on the NPU, and everything else in the browser. Hosting the page on the Tiiny would only serve static files.
 
-## Les deux « stores »
+## The two "stores"
 
-### Agent Store officiel de Tiiny
+### Official Tiiny Agent Store
 
-**Ouverture aux tiers : aucune procédure publique trouvée.** Ni formulaire, ni guide de publication dans [dev.tiiny.ai](https://dev.tiiny.ai), ni route de soumission. Cela ne prouve pas qu'elle n'existe pas sur demande : il faut poser la question à Tiiny.
+**Open to third parties: no public procedure found.** There is no form, no publishing guide in [dev.tiiny.ai](https://dev.tiiny.ai) and no submission route. This does not prove that none exists on request: Tiiny needs to be asked.
 
-Ce qu'on observe sur l'appareil :
-- Catalogue servi par Tiiny via `/api/v1/apps` : extensions, apps desktop en archive, et webapps.
-- Webapps : des **services Docker Compose ARM64** tirés de `registry.tiiny.cloud`, listés par `/api/services`, chacun avec son port.
-- **Tiinyvisuals**, image officielle `tiiny-image` v0.1.22, est une webapp officielle de ce type. C'est un concurrent direct à examiner.
+What can be seen on the device:
+- A catalog served by Tiiny through `/api/v1/apps`: extensions, desktop apps as archives, and webapps.
+- Webapps: **ARM64 Docker Compose services** pulled from `registry.tiiny.cloud`, listed by `/api/services`, each with its own port.
+- **Tiinyvisuals**, image `tiiny-image` v0.1.22, is an official webapp of this type. It is a direct competitor worth examining.
 
-Route d'installation d'un Compose arbitraire : la documentation n'en montre pas (liste, état du téléchargement, annulation, suppression). Non testé, pour ne pas modifier l'appareil.
+Route for installing an arbitrary Compose file: the documentation does not show one (list, download status, cancel, delete). Not tested, to avoid changing the device.
 
-### tiinyapp.farm (communautaire)
+### tiinyapp.farm (community)
 
-[tiinyapp.farm](https://tiinyapp.farm) est **ouvert aux apps, mais sans lien avec Tiiny** (Titanium Computing). 10 apps au catalogue, dont une nommée `image-studio`, autre concurrent à regarder.
+[tiinyapp.farm](https://tiinyapp.farm) is **open to apps, but not affiliated with Tiiny** (Titanium Computing). It has 10 apps in its catalog, including one named `image-studio`, another competitor to look at.
 
-- Les apps tournent **sur le PC, à côté du Tiiny**, rien n'est installé sur l'appareil.
-- Publication : preuve de possession d'un Tiiny (code placé dans la bio TiinyVerse), archive `.tar.gz`, `farm.json`, commande `farm publish`.
-- Contrôles automatiques puis **relecture humaine obligatoire**. Interdits : `subprocess`, `ctypes`, `eval`, secrets dans l'archive. Limite : 50 Mo en envoi.
-- Installation : `pip install tiinyapp-farm`, puis `farm install` et `farm start`. Python 3.9 ou plus requis.
+- Apps run **on the PC, alongside the Tiiny**. Nothing is installed on the device.
+- Publishing: proof of owning a Tiiny (a code placed in the TiinyVerse bio), a `.tar.gz` archive, `farm.json`, and the `farm publish` command.
+- Automated checks, then **mandatory human review**. Forbidden: `subprocess`, `ctypes`, `eval`, secrets in the archive. Upload limit: 50 MB.
+- Installation: `pip install tiinyapp-farm`, then `farm install` and `farm start`. Requires Python 3.9 or later.
 
-À prévoir pour TiinyPaint : un lanceur Python de quelques lignes (`http.server`, permissions `network` et `device`) et un `farm.json`. La farm transmet l'adresse et la clé par l'environnement : le lanceur devra les passer à la page.
+Needed for TiinyPaint: a Python launcher of a few lines (`http.server`, `network` and `device` permissions) and a `farm.json`. The farm passes the address and key through the environment, so the launcher will have to pass them to the page.
 
-## Comparaison
+## Comparison
 
-| | Page locale (actuel) | App Farm | Embarquée sur le Tiiny | Desktop (Tauri, comme Tiiny Studio) |
+| | Local page (current) | App Farm | On the Tiiny | Desktop (Tauri, like Tiiny Studio) |
 |---|---|---|---|---|
-| Disponible aujourd'hui | Oui | Après relecture | **Non, pas de voie publique trouvée** | Après packaging |
-| Installation | Aucune | Python + `farm` | Un clic si accepté au store | Un installeur |
-| Découverte par les utilisateurs | Aucune | Catalogue communautaire | **La meilleure** | À notre charge |
-| Accès depuis téléphone ou tablette | Non | Non | **Oui, sur le réseau local** | Non |
-| Accès par USB | Oui | Oui | À vérifier : les ports d'app semblent bloqués en USB | Oui |
-| Mémoire du Tiiny consommée | Aucune | Aucune | Un conteneur en plus | Aucune |
-| Stockage des images | PC | PC | Sur le Tiiny, possible entre appareils | PC, avec accès aux fichiers |
-| Effort | Fait | Faible | Élevé : image ARM64, registre, mises à jour | Moyen : build et signature par OS |
-| Dépendance à Tiiny | API seule | API seule | **Forte** : acceptation et registre | API seule |
-| Code réutilisé | Tout | Tout, plus un lanceur | Tout, plus un conteneur | Tout, plus une enveloppe |
+| Available today | Yes | After review | **No, no public route found** | After packaging |
+| Installation | None | Python + `farm` | One click if accepted in the store | An installer |
+| User discovery | None | Community catalog | **The best** | Up to us |
+| Access from phone or tablet | No | No | **Yes, on the local network** | No |
+| USB access | Yes | Yes | To be checked: app ports seem to be blocked over USB | Yes |
+| Tiiny memory used | None | None | One more container | None |
+| Image storage | PC | PC | On the Tiiny, can be shared between devices | PC, with file access |
+| Effort | Done | Low | High: ARM64 image, registry, updates | Medium: build and signing per OS |
+| Dependency on Tiiny | API only | API only | **Strong**: acceptance and registry | API only |
+| Code reused | All | All, plus a launcher | All, plus a container | All, plus a wrapper |
 
-Tiiny Studio est lui-même une app communautaire Tauri (`io.github.thezolon.tiinystudio`), et non un produit officiel. Une app desktop ne demande donc aucune autorisation.
+Tiiny Studio is itself a community Tauri app (`io.github.thezolon.tiinystudio`), not an official product. A desktop app therefore needs no authorization.
 
-## Points à régler avant toute diffusion publique
+## To settle before any public release
 
-1. **Licences** : Qwen-Image 2.1, PE-I2I et PE-T2I sont sous [licence de recherche Qwen](../licenses/QWEN_RESEARCH_LICENSE.txt) : usage non commercial uniquement, sauf accord séparé. La redistribution est permise avec la licence et une mention `Notice`, fournies dans ce dépôt pour `web/prompts.js`. Une version payante demanderait cet accord, ou de télécharger les prompts au premier lancement sans lever la limite d'usage des modèles.
-2. **Modèle par défaut** : l'app choisit le modèle déjà chargé, qui peut être un modèle communautaire. Pour une version publique, le défaut devrait être le modèle officiel, avec le choix laissé à l'utilisateur.
-3. **Adresses** : l'adresse du Tiiny est saisie à la main. Mieux vaudrait la découverte (`:39218/device.json`, ou les noms `api.tiiny`).
+1. **Licenses**: Qwen-Image 2.1, PE-I2I and PE-T2I are under the [Qwen research license](../licenses/QWEN_RESEARCH_LICENSE.txt): non-commercial use only, unless separately agreed. Redistribution is allowed with the license and a `Notice` statement, both provided in this repo for `web/prompts.js`. A paid version would need that agreement. Downloading the prompts at first launch would avoid redistributing them, but would not lift the usage limit on the models.
+2. **Default model**: the app picks the model that is already loaded, which may be a community model. For a public version, the default should be the official model, with the choice left to the user.
+3. **Addresses**: the Tiiny address is entered by hand. Discovery would be better (`:39218/device.json`, or the `api.tiiny` names).
 
-## Questions à poser à Tiiny
+## Questions for Tiiny
 
-- Existe-t-il une voie pour publier une webapp tierce au store ?
-- Une route d'aperçu de l'estimation x0 est-elle envisageable pendant la diffusion ?
-- Le paramètre `stream_return_steps` et la route en flux sont-ils stables ? Ils ne sont visibles dans aucune documentation que nous ayons trouvée.
-- Un modèle communautaire peut déclarer 0 % de NPU, ce qui fausse `unload_candidate` : anomalie connue ?
+- Is there a route for publishing a third-party webapp to the store?
+- Could a route for previewing the x0 estimate during diffusion be considered?
+- Are the `stream_return_steps` parameter and the streaming route stable? They do not appear in any documentation we have found.
+- A community model can declare 0% NPU, which skews `unload_candidate`: is this a known issue?

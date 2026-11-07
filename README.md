@@ -1,38 +1,38 @@
 # TiinyPaint
 
-Création et édition d'images avec Qwen-Image 2.1 sur le Tiiny AI Pocket Lab. Page web statique, sans backend ni build : le navigateur parle directement à l'API du Tiiny.
+Create and edit images with Qwen-Image 2.1 on the Tiiny AI Pocket Lab. It is a static web page with no backend or build step: the browser talks directly to the Tiiny API.
 
-## Lancer
+## Run
 
-Ouvrir `web/index.html` dans Chrome ou Edge (double-clic), puis renseigner l'adresse du Tiiny (`http://` suivi de son IP en USB ou en Wi-Fi) et la clé API (TiinyOS → Réglages → API Key). La clé reste dans le `localStorage` du navigateur et n'est jamais écrite dans le repo.
+Open `web/index.html` in Chrome or Edge (double-click), then enter the Tiiny address (`http://` followed by its IP over USB or Wi-Fi) and the API key (TiinyOS → Settings → API Key). The key stays in the browser's `localStorage` and is never written to the repo.
 
-Le Tiiny doit être déverrouillé : après un redémarrage, l'API répond 502 tant que TiinyOS n'a pas été ouvert.
+The Tiiny must be unlocked: after a restart, the API returns 502 until TiinyOS has been opened.
 
-## Fonctions
+## Features
 
-- **Création** et **édition avec références** (10 images max), mêmes poids Qwen-Image 2.1.
-- **Amélioration du prompt** : PE-I2I avec images, PE-T2I sans image, ou tout LLM installé. La réflexion s'affiche en direct.
-- **Réglages** : format, résolution, étapes, CFG, seed, scheduler, prompt négatif, température, top P, top K.
-- **Aperçu pendant la diffusion** : Off, 1/8, 1/4, 1/2, 1. Bouton Arrêter : le Tiiny stoppe réellement le calcul.
-- **Modèles** : chargement et déchargement, avec contrôle de la mémoire réelle du NPU.
-- **Éditeur** : masque au pinceau, gomme, lasso, rectangle, inversion ; restauration depuis une autre image ; tampon de clonage ; recadrage ; extension de toile ; rotation et miroir ; annulation ; zoom.
-- **Diffusion localisée** : seule la zone masquée est générée, et hors de cette zone les pixels restent identiques.
-- **Interface en 5 langues** : anglais, français, espagnol, allemand, italien.
+- **Creation** and **editing with references** (up to 10 images), using the same Qwen-Image 2.1 weights.
+- **Prompt enhancement**: PE-I2I with images, PE-T2I without images, or any installed LLM. The model's reasoning is shown live.
+- **Settings**: aspect ratio, resolution, steps, CFG, seed, scheduler, negative prompt, temperature, top P, top K.
+- **Preview during diffusion**: Off, 1/8, 1/4, 1/2, 1. The Stop button really does stop the computation on the Tiiny.
+- **Models**: load and unload, with a check against the NPU's actual memory.
+- **Editor**: mask brush, eraser, lasso, rectangle, invert; restore from another image; clone stamp; crop; canvas extension; rotate and flip; undo; zoom.
+- **Localized diffusion**: only the masked area is generated, and pixels outside it stay identical.
+- **Interface in 5 languages**: English, French, Spanish, German, Italian.
 
 ## Structure
 
-| Fichier | Rôle |
+| File | Purpose |
 |---|---|
-| `web/api.js` | Client de l'API Tiiny (modèles, flux image, flux chat) |
-| `web/app.js` | Interface et enchaînements |
-| `web/editor.js` | Éditeur sur canvas et préparation de la diffusion localisée |
-| `web/i18n.js` | Traductions |
-| `web/prompts.js` | Prompts système officiels de PE-I2I et PE-T2I |
-| `docs/API_TIINY.md` | Ce qu'on a appris de l'API, avec les mesures |
-| `docs/DISTRIBUTION.md` | Store Tiiny, App Farm, app embarquée ou desktop |
+| `web/api.js` | Tiiny API client (models, image stream, chat stream) |
+| `web/app.js` | Interface and workflows |
+| `web/editor.js` | Canvas editor and localized diffusion preparation |
+| `web/i18n.js` | Translations |
+| `web/prompts.js` | Official PE-I2I and PE-T2I system prompts |
+| `docs/API_TIINY.md` | What we learned about the API, with measurements |
+| `docs/DISTRIBUTION.md` | Tiiny store, App Farm, on-device or desktop app |
 
-Limite connue du POC : l'historique n'est pas conservé au rechargement de la page.
+Known POC limitation: the history is not kept when the page reloads.
 
-## Licence
+## License
 
-Le code est sous Apache 2.0, sauf `web/prompts.js`, qui reprend les prompts système de Qwen sous licence de recherche Qwen : **usage non commercial uniquement**. Voir [NOTICE](NOTICE). Les modèles Qwen-Image 2.1, PE-I2I et PE-T2I, qui ne sont pas inclus ici, sont sous la même licence : une utilisation commerciale demande un accord séparé avec Qwen.
+The code is under Apache 2.0, except `web/prompts.js`, which contains Qwen's system prompts under the Qwen research license: **non-commercial use only**. See [NOTICE](NOTICE). The Qwen-Image 2.1, PE-I2I and PE-T2I models are not included here and are under the same license: commercial use requires a separate agreement with Qwen.

@@ -1,27 +1,27 @@
-# API Tiiny : ce qui sert à TiinyPaint
+# Tiiny API: what TiinyPaint uses
 
-Relevé le 2026-11-07 sur un Tiiny z01, TiinyOS 0.1.39, par USB. Le gateway n'a pas de spécification publiée pour l'inférence : les routes viennent de nos essais, de [dev.tiiny.ai](https://dev.tiiny.ai) et des notes communautaires [thezolon/tiiny-api-notes](https://github.com/thezolon/tiiny-api-notes). Elles peuvent changer à chaque mise à jour.
+Recorded on 2026-11-07 on a Tiiny z01, TiinyOS 0.1.39, over USB. The gateway has no published specification for inference: the routes come from our tests, [dev.tiiny.ai](https://dev.tiiny.ai) and the community notes in [thezolon/tiiny-api-notes](https://github.com/thezolon/tiiny-api-notes). They may change with any update.
 
-## Accès
+## Access
 
-- Tout passe par le port 80 : `Authorization: Bearer <clé>`. Sans clé : 401. Tiiny verrouillé après un redémarrage : 502.
-- **CORS ouvert**, y compris depuis `file://` : une page statique suffit, sans backend.
-- Par USB, seul le port 80 répond d'après les notes communautaires. Les ports des conteneurs de modèles ne sont donc pas une option fiable.
+- Everything goes through port 80: `Authorization: Bearer <key>`. Without a key: 401. Tiiny locked after a restart: 502.
+- **CORS is open**, including from `file://`, so a static page is enough, with no backend.
+- Over USB, only port 80 responds according to the community notes. The model container ports are therefore not a reliable option.
 
-## Modèles
+## Models
 
-| Méthode | Route | Usage |
+| Method | Route | Purpose |
 |---|---|---|
-| GET | `/api/v1/models/` | Modèles installés, `status`, `type`, `npu_usage`, `steps`, `guidance_scale` |
-| GET | `/api/v1/models/running` | Modèles chargés |
-| GET | `/api/v1/models/{id}/unload_candidate` | Place disponible selon le budget déclaré |
-| POST | `/api/v1/models/{id}/launch` | Charge, de façon asynchrone. Corps : `{"model_id": id}` |
-| POST | `/api/v1/models/{id}/stop` | Décharge |
-| GET | `/api/v1/npu/status` | Utilisation et **mémoire réelle** du NPU |
+| GET | `/api/v1/models/` | Installed models, `status`, `type`, `npu_usage`, `steps`, `guidance_scale` |
+| GET | `/api/v1/models/running` | Loaded models |
+| GET | `/api/v1/models/{id}/unload_candidate` | Space available according to the declared budget |
+| POST | `/api/v1/models/{id}/launch` | Loads asynchronously. Body: `{"model_id": id}` |
+| POST | `/api/v1/models/{id}/stop` | Unloads |
+| GET | `/api/v1/npu/status` | NPU usage and **actual memory** |
 
-**Piège vérifié** : un modèle communautaire déclare 0 % de NPU. `unload_candidate` annonçait alors 76 % libres avec 38,1/48 Go réellement occupés. PE-T2I (23 %, environ 11,3 Go) était accepté puis ne démarrait jamais, sans erreur ni état `pending`. L'app compare donc le besoin à la mémoire réelle avant de charger.
+**Verified trap**: a community model declares 0% NPU. `unload_candidate` then reported 76% free while 38.1/48 GB was actually in use. PE-T2I (23%, about 11.3 GB) was accepted but never started, with no error and no `pending` state. The app therefore compares the requirement with actual memory before loading.
 
-## Génération : `POST /v1/image/generate/stream`
+## Generation: `POST /v1/image/generate/stream`
 
 ```json
 {
@@ -39,72 +39,72 @@ Relevé le 2026-11-07 sur un Tiiny z01, TiinyOS 0.1.39, par USB. Le gateway n'a 
 }
 ```
 
-- `size` est **ignoré** sur cette route (rendu en 1024×1024) : il faut `width` et `height`.
-- Réponse SSE : `start`, `preview`, `completed`, `end`, ou `error`. `preview` et `completed` portent une image PNG RGBA en data URI.
-- `/v1/images/edits` n'existe pas : l'édition passe par `image` ou `images` (10 au maximum).
-- `GET /v1/image/status` décrit le runtime : un seul rendu à la fois, schedulers `euler`, `euler_ancestral_rf`, `unipc_flow`.
-- Tailles : multiples de 32, et `ceil_to_32((l/16) × (h/16)) ≤ 16896`, soit environ 4,3 Mpx.
-- **Arrêt** : il n'y a pas de route d'annulation, mais couper la connexion suffit. Le NPU est retombé à 0 % en quelques secondes et le rendu suivant est parti normalement.
+- `size` is **ignored** on this route (renders at 1024×1024): use `width` and `height`.
+- SSE response: `start`, `preview`, `completed`, `end` or `error`. `preview` and `completed` carry an RGBA PNG as a data URI.
+- `/v1/images/edits` does not exist: editing goes through `image` or `images` (10 at most).
+- `GET /v1/image/status` describes the runtime: one render at a time, schedulers `euler`, `euler_ancestral_rf`, `unipc_flow`.
+- Sizes: multiples of 32, and `ceil_to_32((w/16) × (h/16)) ≤ 16896`, or about 4.3 MP.
+- **Stopping**: there is no cancel route, but closing the connection is enough. The NPU dropped back to 0% within a few seconds and the next render started normally.
 
-### Paramètres mesurés
+### Measured parameters
 
-| Essai | Résultat |
+| Test | Result |
 |---|---|
-| CFG 1, avec ou sans `negative_prompt` | Image identique : le prompt négatif est sans effet |
-| CFG 3 | Prompt négatif actif, temps multiplié par 2 |
-| Même seed, mêmes réglages | Image identique |
-| `sampling_method` (envoyé par TiinyOS) | Sans effet sur ce modèle |
+| CFG 1, with or without `negative_prompt` | Identical image: the negative prompt has no effect |
+| CFG 3 | Negative prompt active, time doubled |
+| Same seed, same settings | Identical image |
+| `sampling_method` (sent by TiinyOS) | No effect on this model |
 
-### Coût du décodage (1024×1024, 8 étapes)
+### Decoding cost (1024×1024, 8 steps)
 
-| `stream_return_steps` | Temps |
+| `stream_return_steps` | Time |
 |---|---|
 | `[]` | 42 s |
 | `[2,4,6,8]` | 52 s |
-| Tous les steps | 63 s |
+| Every step | 63 s |
 
-Soit environ 2,5 s par aperçu en 1024². Un rendu de 40 étapes avec 11 aperçus a pris 3 min 35. Avec `[]`, aucun événement d'étape n'arrive : pas de suivi de progression.
+That is about 2.5 s per preview at 1024². A 40-step render with 11 previews took 3 min 35 s. With `[]`, no step events arrive, so progress cannot be tracked.
 
-### Lisibilité des aperçus : la limite à connaître
+### Preview readability: the limit to know
 
-Le serveur décode le **latent encore bruité**, pas une estimation de l'image finale. Sur un rendu de 40 étapes :
+The server decodes the **still-noisy latent**, not an estimate of the final image. On a 40-step render:
 
-| Avancement | Planning officiel | Planning linéaire |
+| Progress | Official schedule | Linear schedule |
 |---|---|---|
-| 40 % | Bruit | Bruit |
-| 50 % | Bruit | Bruit, quelques traces du sujet |
-| 60 % | Bruit | Pose visible, très bruitée |
-| 70 % | Silhouette | Pose lisible |
-| 80 % | Pose nette | Net |
-| 90 % | Presque final | Net |
+| 40% | Noise | Noise |
+| 50% | Noise | Noise, some traces of the subject |
+| 60% | Noise | Pose visible, very noisy |
+| 70% | Silhouette | Pose readable |
+| 80% | Clear pose | Clear |
+| 90% | Almost final | Clear |
 
-Stopper à 50 % sur un défaut de pose n'est donc **pas possible** avec cette API. Le planning officiel permet de juger vers 75 %, le linéaire vers 60 à 70 %.
+Stopping at 50% because of a pose defect is therefore **not possible** with this API. The official schedule allows a judgment at around 75%, the linear one at around 60 to 70%.
 
-- Linéaire : `"scheduler": {"type": "euler", "params": {"use_dynamic_shifting": false, "shift": 1.0}}`. Sur notre unique test, même pose finale à 40 étapes.
-- À 8 étapes, ce planning donne une image **floue et dédoublée**. L'app ne l'applique donc qu'à partir de 30 étapes, et l'option est désactivée par défaut. Sa qualité reste à évaluer sur plus de cas.
-- Écartés après essai : flou passe-bas côté client, extrapolation de l'image finale à partir de deux aperçus, retrait du canal alpha, brouillon rapide en 8 ou 12 étapes (la pose diffère du rendu de 40 étapes).
-- Une vraie solution demanderait à Tiiny un aperçu de l'estimation x0.
+- Linear: `"scheduler": {"type": "euler", "params": {"use_dynamic_shifting": false, "shift": 1.0}}`. In our single test, the final pose at 40 steps was the same.
+- At 8 steps, this schedule gives a **blurry, ghosted** image. The app therefore only applies it from 30 steps, and the option is off by default. Its quality still needs evaluating on more cases.
+- Rejected after testing: client-side low-pass blur, extrapolating the final image from two previews, removing the alpha channel, fast 8- or 12-step drafts (the pose differs from the 40-step render).
+- A real solution would need Tiiny to provide a preview of the x0 estimate.
 
-## Diffusion localisée
+## Localized diffusion
 
-Pas de paramètre `mask`. La fiche du modèle parle d'annotation peinte ou de masque séparé. Trois méthodes essayées (768×768, 12 étapes), toutes correctes :
+There is no `mask` parameter. The model card mentions painted annotation or a separate mask. Three methods were tried (768×768, 12 steps), all with correct results:
 
-| Méthode | Images | Temps | Retenue pour |
+| Method | Images | Time | Used for |
 |---|---|---|---|
-| Zone remplie de magenta | 1 | 84 s | « Remplacer le contenu », extension de toile |
-| Masque noir et blanc séparé | 2 | 123 s | « Transformer le contenu » |
-| Cercle rouge dessiné | 1 | 84 s | Non retenue |
+| Area filled with magenta | 1 | 84 s | "Replace the content", canvas extension |
+| Separate black-and-white mask | 2 | 123 s | "Transform the content" |
+| Drawn red circle | 1 | 84 s | Not used |
 
-Les temps ont pu être gonflés par des rendus lancés en parallèle. L'app ajoute deux étapes côté client :
-1. **Recadrage sur le masque** (avec marge de 35 %), mis à l'échelle à la résolution demandée : plus de détails sur les petites zones.
-2. **Recomposition à travers le masque adouci** : essai réel, 0 pixel modifié hors de la zone.
+The times may have been inflated by renders running in parallel. The app adds two client-side steps:
+1. **Crop to the mask** (with a 35% margin), scaled to the requested resolution: more detail on small areas.
+2. **Recomposite through the feathered mask**: in a real test, 0 pixels changed outside the area.
 
-## Qwen-Image 2.1 et prompt enhancers
+## Qwen-Image 2.1 and prompt enhancers
 
-- Réglages officiels : 40 étapes, CFG 1, 2048×2048 recommandé. Canal alpha pris en charge.
-- PE-I2I et PE-T2I ne sont pas des encodeurs au sens de la diffusion : ce sont des LLM (Qwen3.5-VL 9B affinés) qui réécrivent le prompt avant de l'envoyer au modèle image.
-- Appel : `POST /v1/chat/completions`, images en `image_url`. Réglages officiels : température 1, top P 0,95, top K 20, plus `presence_penalty` 1,5 pour PE-T2I.
-- **Le prompt système officiel est indispensable** : sans lui, PE-I2I répond avec un JSON différent (`action`, `target`, `details`). L'API ne l'applique pas. Copie dans `web/prompts.js`.
-- Sortie : `{"rewritten_prompt", "wh_ratio", "ratio_follow"}`. `wh_ratio` et `ratio_follow` s'excluent mutuellement.
-- PE-I2I : environ 50 s sur une image. Sans image et sans prompt système : réponse correcte mais 150 s et pas de format. Son prompt système suppose toujours une image.
-- La réflexion n'est pas désactivable sur ces deux modèles, et elle arrive en flux dans `reasoning_content`.
+- Official settings: 40 steps, CFG 1, 2048×2048 recommended. Alpha channel supported.
+- PE-I2I and PE-T2I are not encoders in the diffusion sense: they are LLMs (fine-tuned Qwen3.5-VL 9B) that rewrite the prompt before it goes to the image model.
+- Call: `POST /v1/chat/completions`, images as `image_url`. Official settings: temperature 1, top P 0.95, top K 20, plus `presence_penalty` 1.5 for PE-T2I.
+- **The official system prompt is essential**: without it, PE-I2I responds with a different JSON (`action`, `target`, `details`). The API does not apply it. A copy is in `web/prompts.js`.
+- Output: `{"rewritten_prompt", "wh_ratio", "ratio_follow"}`. `wh_ratio` and `ratio_follow` are mutually exclusive.
+- PE-I2I: about 50 s on one image. With no image and no system prompt: a correct response, but 150 s and no format. Its system prompt always assumes an image.
+- Reasoning cannot be disabled on these two models, and it streams in `reasoning_content`.
