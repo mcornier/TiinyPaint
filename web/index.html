@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TiinyPaint</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>TiinyPaint</h1>
+    <div class="conn">
+      <span id="connDot" class="dot" aria-hidden="true"></span>
+      <span id="connText"></span>
+    </div>
+    <div class="meter">
+      <span class="meter-label">NPU</span>
+      <span class="meter-track"><span id="npuBar" class="meter-fill"></span></span>
+      <span id="npuText" class="meter-value">–</span>
+    </div>
+    <div class="meter">
+      <span class="meter-label" data-i18n="memory"></span>
+      <span class="meter-track"><span id="memBar" class="meter-fill"></span></span>
+      <span id="memText" class="meter-value">–</span>
+    </div>
+    <select id="language" class="compact" data-i18n-aria="language"></select>
+    <button id="settingsBtn" type="button" class="ghost" data-i18n="connection"></button>
+  </header>
+
+  <main class="layout">
+    <section class="panel controls">
+      <div class="field">
+        <label for="prompt"><span data-i18n="promptLabel"></span> <span id="modeBadge" class="badge"></span></label>
+        <textarea id="prompt" rows="6" data-i18n-placeholder="promptPlaceholder"></textarea>
+        <div class="row">
+          <button id="enhanceBtn" type="button" class="secondary" data-i18n="enhance"></button>
+          <button id="revertBtn" type="button" class="ghost" data-i18n="revert" hidden></button>
+        </div>
+        <p id="enhanceHint" class="hint"></p>
+        <details id="thinkingBox" hidden>
+          <summary id="thinkingSummary"></summary>
+          <pre id="thinking"></pre>
+        </details>
+      </div>
+
+      <div class="field">
+        <span class="field-label"><span data-i18n="refsLabel"></span> <span class="muted" data-i18n="refsMax"></span></span>
+        <div id="dropzone" class="dropzone" tabindex="0" role="button">
+          <span data-i18n="dropzone"></span>
+          <input id="fileInput" type="file" accept="image/*" multiple hidden>
+        </div>
+        <div id="refs" class="refs"></div>
+      </div>
+
+      <details class="group" open>
+        <summary data-i18n="groupImage"></summary>
+        <div class="grid2">
+          <div class="field">
+            <label for="ratio" data-i18n="ratio"></label>
+            <select id="ratio">
+              <option value="1:1" data-i18n="square"></option>
+              <option value="4:3">4:3</option>
+              <option value="3:4">3:4</option>
+              <option value="3:2">3:2</option>
+              <option value="2:3">2:3</option>
+              <option value="16:10">16:10</option>
+              <option value="10:16">10:16</option>
+              <option value="16:9">16:9</option>
+              <option value="9:16">9:16</option>
+              <option value="custom" data-i18n="custom"></option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="side" data-i18n="resolution"></label>
+            <select id="side">
+              <option value="512" data-i18n="fast" data-i18n-n="512"></option>
+              <option value="768">768</option>
+              <option value="1024" selected>1024</option>
+              <option value="1536">1536</option>
+              <option value="2048" data-i18n="recommended" data-i18n-n="2048"></option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="width" data-i18n="width"></label>
+            <input id="width" type="number" min="32" step="32">
+          </div>
+          <div class="field">
+            <label for="height" data-i18n="height"></label>
+            <input id="height" type="number" min="32" step="32">
+          </div>
+        </div>
+        <p id="sizeHint" class="hint"></p>
+      </details>
+
+      <details class="group" open>
+        <summary data-i18n="groupInference"></summary>
+        <div class="field">
+          <label for="imageModel" data-i18n="imageModel"></label>
+          <select id="imageModel"></select>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="steps" data-i18n="steps"></label>
+            <input id="steps" type="number" min="1" max="100" value="40">
+          </div>
+          <div class="field">
+            <label for="guidance" data-i18n="guidance"></label>
+            <input id="guidance" type="number" min="0" max="20" step="0.1" value="1">
+          </div>
+          <div class="field">
+            <label for="seed" data-i18n="seed"></label>
+            <input id="seed" type="number" min="0" value="42">
+          </div>
+          <div class="field checkbox">
+            <label><input id="randomSeed" type="checkbox" checked> <span data-i18n="randomSeed"></span></label>
+          </div>
+        </div>
+        <div class="field">
+          <label for="scheduler" data-i18n="scheduler"></label>
+          <select id="scheduler">
+            <option value="" data-i18n="schedulerDefault"></option>
+            <option value="euler">euler</option>
+            <option value="euler_ancestral_rf">euler_ancestral_rf</option>
+            <option value="unipc_flow">unipc_flow</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="negative" data-i18n="negative"></label>
+          <textarea id="negative" rows="2"></textarea>
+          <p id="negativeHint" class="hint"></p>
+        </div>
+        <div class="field">
+          <span class="field-label" data-i18n="previewLabel"></span>
+          <div id="previewMode" class="segmented" role="radiogroup">
+            <button type="button" data-value="0" role="radio" data-i18n="previewOff"></button>
+            <button type="button" data-value="8" role="radio">1/8</button>
+            <button type="button" data-value="4" role="radio">1/4</button>
+            <button type="button" data-value="2" role="radio">1/2</button>
+            <button type="button" data-value="1" role="radio">1</button>
+          </div>
+          <p id="previewHint" class="hint"></p>
+          <label class="check-line"><input id="earlyPreview" type="checkbox"> <span data-i18n="earlyPreview"></span></label>
+          <p id="earlyHint" class="hint"></p>
+        </div>
+      </details>
+
+      <details class="group">
+        <summary data-i18n="groupEnhance"></summary>
+        <div class="field">
+          <label for="enhancer" data-i18n="llm"></label>
+          <select id="enhancer"></select>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="temperature" data-i18n="temperature"></label>
+            <input id="temperature" type="number" min="0" max="2" step="0.05" value="1">
+          </div>
+          <div class="field">
+            <label for="topP" data-i18n="topP"></label>
+            <input id="topP" type="number" min="0" max="1" step="0.01" value="0.95">
+          </div>
+          <div class="field">
+            <label for="topK" data-i18n="topK"></label>
+            <input id="topK" type="number" min="1" max="200" value="20">
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section class="stage">
+      <div id="editBar" class="edit-bar" hidden>
+        <div id="tools" class="tools" role="toolbar">
+          <button type="button" data-tool="mask" data-i18n="toolMask"></button>
+          <button type="button" data-tool="erase" data-i18n="toolErase"></button>
+          <button type="button" data-tool="lasso" data-i18n="toolLasso"></button>
+          <button type="button" data-tool="rect" data-i18n="toolRect"></button>
+          <button type="button" data-tool="restore" data-i18n="toolRestore"></button>
+          <button type="button" data-tool="stamp" data-i18n="toolStamp"></button>
+          <button type="button" data-tool="crop" data-i18n="toolCrop"></button>
+        </div>
+        <div class="tool-actions">
+          <button id="undoBtn" type="button" class="ghost small" data-i18n="undo"></button>
+          <button id="redoBtn" type="button" class="ghost small" data-i18n="redo"></button>
+          <button id="zoomResetBtn" type="button" class="ghost small" data-i18n="zoomReset"></button>
+          <button id="closeEditorBtn" type="button" class="ghost small" data-i18n="closeEditor"></button>
+        </div>
+
+        <div class="options">
+          <label class="opt" data-for="brush"><span data-i18n="brush"></span>
+            <input id="brushSize" type="range" min="4" max="500" value="64"><output id="brushValue"></output></label>
+          <label class="opt" data-for="mask"><span data-i18n="feather"></span>
+            <input id="feather" type="range" min="0" max="80" value="16"><output id="featherValue"></output></label>
+          <label class="opt check" data-for="mask"><input id="showMask" type="checkbox" checked> <span data-i18n="showMask"></span></label>
+          <button id="invertBtn" type="button" class="ghost small" data-for="mask" data-i18n="invert"></button>
+          <button id="clearMaskBtn" type="button" class="ghost small" data-for="mask" data-i18n="clearMask"></button>
+          <label class="opt" data-for="mask"><span data-i18n="method"></span>
+            <select id="method" class="compact">
+              <option value="fill" data-i18n="methodFill"></option>
+              <option value="keep" data-i18n="methodKeep"></option>
+            </select></label>
+          <label class="opt" data-for="mask"><span data-i18n="scope"></span>
+            <select id="scope" class="compact">
+              <option value="crop" data-i18n="scopeCrop"></option>
+              <option value="full" data-i18n="scopeFull"></option>
+            </select></label>
+          <label class="opt" data-for="restore"><span data-i18n="source"></span>
+            <select id="source" class="compact"></select></label>
+          <button id="copySourceBtn" type="button" class="ghost small" data-for="restore" data-i18n="copyFromSource"></button>
+          <label class="opt" data-for="crop"><span data-i18n="cropRatio"></span>
+            <select id="cropRatio" class="compact">
+              <option value="" data-i18n="cropFree"></option>
+              <option value="1:1">1:1</option>
+              <option value="4:3">4:3</option>
+              <option value="3:4">3:4</option>
+              <option value="3:2">3:2</option>
+              <option value="2:3">2:3</option>
+              <option value="16:9">16:9</option>
+              <option value="9:16">9:16</option>
+            </select></label>
+          <button id="applyCropBtn" type="button" class="secondary small" data-for="crop" data-i18n="applyCrop"></button>
+          <span class="opt" data-for="crop"><span data-i18n="extend"></span>
+            <button type="button" class="ghost small" data-extend="left" data-i18n="left"></button>
+            <button type="button" class="ghost small" data-extend="right" data-i18n="right"></button>
+            <button type="button" class="ghost small" data-extend="top" data-i18n="top"></button>
+            <button type="button" class="ghost small" data-extend="bottom" data-i18n="bottom"></button></span>
+          <button id="rotateBtn" type="button" class="ghost small" data-for="crop" data-i18n="rotate"></button>
+          <button id="flipBtn" type="button" class="ghost small" data-for="crop" data-i18n="flip"></button>
+        </div>
+        <p id="toolHint" class="hint tool-hint"></p>
+      </div>
+
+      <div id="canvas" class="canvas">
+        <img id="output" alt="" hidden>
+        <canvas id="editCanvas" class="edit-canvas" hidden></canvas>
+        <p id="placeholder" class="placeholder" data-i18n="placeholder"></p>
+      </div>
+      <div class="progress" aria-hidden="true"><span id="progressBar" class="progress-fill"></span></div>
+      <div class="stage-bar">
+        <button id="generateBtn" type="button" class="primary" data-i18n="generate"></button>
+        <button id="stopBtn" type="button" class="danger" data-i18n="stop" hidden></button>
+        <p id="status" class="status" role="status"></p>
+        <span class="spacer"></span>
+        <button id="editBtn" type="button" class="secondary" data-i18n="editImage" disabled></button>
+        <button id="useAsRefBtn" type="button" class="ghost" data-i18n="addAsRef" disabled></button>
+        <a id="downloadBtn" class="button ghost disabled" aria-disabled="true" data-i18n="download"></a>
+      </div>
+      <div id="history" class="history"></div>
+    </section>
+
+    <section class="panel models">
+      <h2 data-i18n="models"></h2>
+      <div id="modelList" class="model-list"></div>
+      <p class="hint" data-i18n="modelsHint"></p>
+    </section>
+  </main>
+
+  <dialog id="settings">
+    <form method="dialog" id="settingsForm">
+      <h2 data-i18n="settingsTitle"></h2>
+      <div class="field">
+        <label for="baseUrl" data-i18n="address"></label>
+        <input id="baseUrl" type="text" placeholder="http://" spellcheck="false" required>
+        <p class="hint" data-i18n="addressHint"></p>
+      </div>
+      <div class="field">
+        <label for="apiKey" data-i18n="apiKey"></label>
+        <input id="apiKey" type="password" autocomplete="off" spellcheck="false" required>
+        <p class="hint" data-i18n="apiKeyHint"></p>
+      </div>
+      <p id="settingsError" class="error" role="alert"></p>
+      <div class="row end">
+        <button type="button" id="settingsCancel" class="ghost" data-i18n="cancel"></button>
+        <button type="submit" class="primary" value="save" data-i18n="connect"></button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="prompts.js"></script>
+  <script src="i18n.js"></script>
+  <script src="api.js"></script>
+  <script src="editor.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

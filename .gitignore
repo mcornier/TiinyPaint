@@ -1,0 +1,6 @@
+# Rendus et fichiers locaux
+*.local
+outputs/
+.env
+Thumbs.db
+.DS_Store
