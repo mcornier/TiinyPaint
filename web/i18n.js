@@ -52,6 +52,7 @@ const I18N = {
     loadModelFirst: '{m} is not loaded. Load it from this block.',
     seedAuto: 'Random',
     errLocalNetwork: 'The browser blocked access to the Tiiny at {base}. On a secure (https) page, Chrome and Edge ask for permission: allow local network access for this site (padlock icon, Site settings). Firefox and Safari do not allow it: open web/index.html from your computer instead.', errNotTiiny: '{base} does not answer like a Tiiny. Check the address: http:// followed by the Tiiny’s IP.',
+    loadingTag: 'loading…',
   },
   fr: {
     notConnected: 'Non connecté', memory: 'Mémoire', language: 'Langue',
@@ -103,6 +104,7 @@ const I18N = {
     loadModelFirst: '{m} n’est pas chargé. Charge-le depuis ce bloc.',
     seedAuto: 'Aléatoire',
     errLocalNetwork: 'Le navigateur a bloqué l’accès au Tiiny ({base}). Sur une page sécurisée (https), Chrome et Edge demandent une autorisation : autorise l’accès au réseau local pour ce site (icône du cadenas, Paramètres du site). Firefox et Safari ne le permettent pas : ouvre plutôt web/index.html depuis ton ordinateur.', errNotTiiny: '{base} ne répond pas comme un Tiiny. Vérifie l’adresse : http:// suivi de l’IP du Tiiny.',
+    loadingTag: 'chargement…',
   },
   es: {
     notConnected: 'Sin conexión', memory: 'Memoria', language: 'Idioma',
@@ -154,6 +156,7 @@ const I18N = {
     loadModelFirst: '{m} no está cargado. Cárgalo desde este bloque.',
     seedAuto: 'Aleatoria',
     errLocalNetwork: 'El navegador bloqueó el acceso al Tiiny ({base}). En una página segura (https), Chrome y Edge piden permiso: permite el acceso a la red local para este sitio (icono del candado, Configuración del sitio). Firefox y Safari no lo permiten: abre web/index.html desde tu ordenador.', errNotTiiny: '{base} no responde como un Tiiny. Comprueba la dirección: http:// seguido de la IP del Tiiny.',
+    loadingTag: 'cargando…',
   },
   de: {
     notConnected: 'Nicht verbunden', memory: 'Speicher', language: 'Sprache',
@@ -205,6 +208,7 @@ const I18N = {
     loadModelFirst: '{m} ist nicht geladen. Lade es über diesen Block.',
     seedAuto: 'Zufällig',
     errLocalNetwork: 'Der Browser hat den Zugriff auf den Tiiny ({base}) blockiert. Auf einer sicheren Seite (https) fragen Chrome und Edge nach einer Erlaubnis: Erlaube den Zugriff auf das lokale Netzwerk für diese Website (Schloss-Symbol, Website-Einstellungen). Firefox und Safari erlauben das nicht: Öffne stattdessen web/index.html von deinem Computer.', errNotTiiny: '{base} antwortet nicht wie ein Tiiny. Prüfe die Adresse: http:// gefolgt von der IP des Tiiny.',
+    loadingTag: 'wird geladen…',
   },
   it: {
     notConnected: 'Non connesso', memory: 'Memoria', language: 'Lingua',
@@ -256,6 +260,7 @@ const I18N = {
     loadModelFirst: '{m} non è caricato. Caricalo da questo blocco.',
     seedAuto: 'Casuale',
     errLocalNetwork: 'Il browser ha bloccato l’accesso al Tiiny ({base}). Su una pagina sicura (https), Chrome ed Edge chiedono un’autorizzazione: consenti l’accesso alla rete locale per questo sito (icona del lucchetto, Impostazioni sito). Firefox e Safari non lo consentono: apri invece web/index.html dal tuo computer.', errNotTiiny: '{base} non risponde come un Tiiny. Controlla l’indirizzo: http:// seguito dall’IP del Tiiny.',
+    loadingTag: 'caricamento…',
   },
 };
 

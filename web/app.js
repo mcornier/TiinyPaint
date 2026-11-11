@@ -36,6 +36,8 @@ const state = {
   currentId: null,
   originalPrompt: null,
   rewrittenPrompt: null,
+  // Modèle en cours de chargement, et liste qui doit le sélectionner une fois chargé.
+  loading: null,
   abort: null,
   busy: false,
   previewEvery: 4,
@@ -243,6 +245,9 @@ function renderStage() {
     $(id).classList.remove('active', 'done', 'skip');
     if (cls) $(id).classList.add(cls);
   }
+  const loadingModel = state.loading && modelById(state.loading.id);
+  $('nodeModel').classList.toggle('loading', !!loadingModel && isImageModel(loadingModel));
+  $('nodePe').classList.toggle('loading', !!loadingModel && isChatModel(loadingModel));
   const branch = $('previewBranch');
   const off = !state.previewEvery;
   branch.classList.toggle('preview-off', off);
@@ -318,8 +323,12 @@ function syncPicker(select) {
   const button = pickers.get(select);
   if (!button) return;
   const item = pickerItems(select).find((i) => i.value === select.value);
-  button.querySelector('.picker-label').textContent = item?.label || '';
-  button.title = item?.label || '';
+  const loadingHere = state.loading?.select === select;
+  // La mention passe avant le nom : un nom long est coupé par la largeur du bloc.
+  const label = loadingHere ? `(${t('loadingTag')}) ${modelName(state.loading.id)}` : item?.label || '';
+  button.querySelector('.picker-label').textContent = label;
+  button.classList.toggle('is-loading', loadingHere);
+  button.title = label;
   if (select.id === 'language') button.querySelector('.picker-flag').innerHTML = flagSvg(select.value);
   button.classList.toggle('unloaded', !!item?.model && !state.running.includes(item.model.id));
   button.disabled = select.disabled || !select.options.length;
@@ -384,10 +393,14 @@ function renderPickerMenu() {
       const load = document.createElement('button');
       load.type = 'button';
       load.className = 'btn small';
-      load.textContent = t(running ? 'unload' : 'load');
+      const loadingThis = state.loading?.id === item.model.id;
+      load.textContent = loadingThis ? t('loadingTag') : t(running ? 'unload' : 'load');
       load.disabled = state.busy;
       const { model } = item;
-      load.addEventListener('click', () => withLock(() => (running ? unloadModel(model) : ensureLoaded(model.id))));
+      load.addEventListener('click', () => {
+        if (running) withLock(() => unloadModel(model));
+        else loadAndSelect(select, item.value, model.id);
+      });
       row.append(load);
     }
     rows.push(row);
@@ -443,6 +456,12 @@ function enhancePickers() {
     const inside = event.composedPath().some((el) => el.classList?.contains('picker') || el.classList?.contains('picker-menu'));
     if (openPickerSelect && !inside) closePicker();
   });
+  // Le menu se ferme quand le curseur en sort, avec un court délai pour pardonner un écart.
+  let leaveTimer = null;
+  $('pickerMenu').addEventListener('mouseleave', () => {
+    leaveTimer = setTimeout(() => closePicker(), 350);
+  });
+  $('pickerMenu').addEventListener('mouseenter', () => clearTimeout(leaveTimer));
   $('pickerMenu').addEventListener('keydown', (event) => {
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
     event.preventDefault();
@@ -573,9 +592,34 @@ async function ensureLoaded(id, signal) {
   }
   await freeRealMemory(id, label);
   setStatus(t('loading', { m: label }));
-  await state.client.launch(id);
-  await state.client.waitRunning(id, { signal });
-  await refreshRunning();
+  state.loading = { id, select: state.loading?.id === id ? state.loading.select : null };
+  refreshPickers();
+  renderStage();
+  try {
+    await state.client.launch(id);
+    await state.client.waitRunning(id, { signal });
+    await refreshRunning();
+  } finally {
+    state.loading = null;
+    refreshPickers();
+    renderStage();
+  }
+}
+
+// Charger depuis une liste du graphe sélectionne le modèle une fois chargé.
+function loadAndSelect(select, value, id) {
+  return withLock(async () => {
+    state.loading = { id, select };
+    try {
+      await ensureLoaded(id);
+    } finally {
+      state.loading = null;
+    }
+    if (!state.running.includes(id)) return;
+    select.value = value;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    syncPicker(select);
+  });
 }
 
 /* ---------- Images du contexte et références ---------- */

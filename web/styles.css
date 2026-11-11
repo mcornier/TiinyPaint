@@ -354,6 +354,12 @@ svg.flag { display: block; flex: none; width: 20px; height: 14px; border-radius:
 .node.active { border-color: var(--active); animation: halo 1.3s ease-in-out infinite; }
 .node.done { border-color: rgba(74, 222, 128, .6); }
 .node.skip { opacity: .6; border-style: dashed; }
+.node.loading { opacity: 1; border-style: solid; border-color: #facc15; animation: halo-yellow 1.3s ease-in-out infinite; }
+@keyframes halo-yellow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(250, 204, 21, .45), 0 0 12px rgba(250, 204, 21, .28); }
+  50% { box-shadow: 0 0 0 1px rgba(250, 204, 21, .9), 0 0 30px rgba(250, 204, 21, .6); }
+}
+.picker.is-loading .picker-label { color: #fde68a; }
 .node.flash { opacity: 1; animation: flash-orange .4s ease-in-out 3; }
 @keyframes flash-orange {
   0%, 100% { border-color: rgba(255, 255, 255, .16); box-shadow: none; }
@@ -460,6 +466,6 @@ dialog h2 { margin-bottom: 14px; font-size: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .node.active, .wire.active::before, .loop.active, .loop.active #loopIcon, .link.active, .wire-col.preview-active .branch { animation: none; }
+  .node.active, .node.loading, .wire.active::before, .loop.active, .loop.active #loopIcon, .link.active, .wire-col.preview-active .branch { animation: none; }
   .frame img, .node, .loop { transition: none; }
 }
