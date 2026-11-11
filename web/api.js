@@ -39,16 +39,28 @@ async function readSse(response, onEvent) {
   }
 }
 
+// Sans schéma, l'adresse serait lue comme un chemin relatif à la page (sur GitHub Pages : une page 404 HTML).
+function normalizeBase(base) {
+  const trimmed = base.trim().replace(/\/+$/, '');
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `http://${trimmed}`;
+}
+
+// Depuis une page HTTPS, Chrome n'autorise une requête http vers le réseau local qu'avec cette déclaration,
+// après accord de l'utilisateur (Local Network Access). Les autres navigateurs ignorent l'option.
+const fromSecurePage = () => window.location.protocol === 'https:';
+
 class TiinyClient {
   constructor(base, key) {
-    this.base = base.replace(/\/+$/, '');
+    this.base = normalizeBase(base);
     this.key = key;
+    this.localNetwork = fromSecurePage() && this.base.startsWith('http:');
   }
 
   async _fetch(path, options = {}) {
     let response;
     try {
       response = await fetch(this.base + path, {
+        ...(this.localNetwork ? { targetAddressSpace: 'local' } : {}),
         ...options,
         headers: {
           Authorization: `Bearer ${this.key}`,
@@ -58,7 +70,11 @@ class TiinyClient {
       });
     } catch (err) {
       if (err.name === 'AbortError') throw err;
-      throw new TiinyError(t('errUnreachable', { base: this.base }), 0);
+      throw new TiinyError(t(this.localNetwork ? 'errLocalNetwork' : 'errUnreachable', { base: this.base }), 0);
+    }
+    // Une page HTML ne vient pas de l'API du Tiiny : mauvaise adresse, ou portail d'un autre service.
+    if (/text\/html/i.test(response.headers.get('content-type') || '')) {
+      throw new TiinyError(t('errNotTiiny', { base: this.base }), response.status);
     }
     if (!response.ok) {
       const text = await response.text().catch(() => '');

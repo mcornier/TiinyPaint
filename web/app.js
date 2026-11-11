@@ -5,6 +5,8 @@ const $ = (id) => document.getElementById(id);
 const STORAGE_KEY = 'tiinypaint.settings';
 const REFS_KEY = 'tiinypaint.refs';
 const DEFAULT_IMAGE_MODEL = 'Qwen/Qwen-Image-2.1';
+// Nom annoncé par le Tiiny sur le réseau local (mDNS) : évite de chercher son IP.
+const DEFAULT_BASE_URL = 'http://tiinyhost.local';
 const PE_I2I = 'Qwen/Qwen-Image-2.1-PE-I2I';
 const PE_T2I = 'Qwen/Qwen-Image-2.1-PE-T2I';
 const MAX_IMAGES = 10;
@@ -1528,6 +1530,7 @@ function setConnection(on, text) {
 async function connect(base, key) {
   const client = new TiinyClient(base, key);
   const info = await client.deviceInfo();
+  base = client.base;
   state.client = client;
   await refreshModels();
   if (!$('width').value || !$('height').value) applyRatioAndSide();
@@ -1575,7 +1578,7 @@ async function pollDevice() {
 }
 
 function openSettings() {
-  $('baseUrl').value = state.settings.baseUrl || '';
+  $('baseUrl').value = state.settings.baseUrl || DEFAULT_BASE_URL;
   $('apiKey').value = state.settings.apiKey || '';
   $('settingsError').textContent = '';
   $('settings').showModal();
@@ -1698,7 +1701,7 @@ function bindEvents() {
     $('settingsError').textContent = '';
     try {
       await connect(base, key);
-      state.settings.baseUrl = base;
+      state.settings.baseUrl = state.client.base;
       state.settings.apiKey = key;
       state.settings.autoConnect = true;
       saveSettings();

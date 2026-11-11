@@ -6,9 +6,11 @@ Create and edit images with Qwen-Image 2.1 on the Tiiny AI Pocket Lab. It is a s
 
 ## Run
 
-Open `web/index.html` in Chrome or Edge (double-click), then enter the Tiiny address (`http://` followed by its IP over USB or Wi-Fi) and the API key (TiinyOS → Settings → API Key). The key stays in the browser's `localStorage` and is never written to the repo.
+Open `web/index.html` in Chrome or Edge (double-click), then enter the Tiiny address (`http://tiinyhost.local` by default on the local network, otherwise `http://` followed by its IP over USB or Wi-Fi) and the API key (TiinyOS → Settings → API Key). The key stays in the browser's `localStorage` and is never written to the repo.
 
 The Tiiny must be unlocked: after a restart, the API returns 502 until TiinyOS has been opened.
+
+You can also use the hosted version at https://mcornier.github.io/TiinyPaint/ with Chrome or Edge. Because that page is served over HTTPS, the browser asks for permission to access your local network the first time it reaches the Tiiny: allow it. Firefox and Safari block this, so open the local file with them.
 
 ## Features
 
